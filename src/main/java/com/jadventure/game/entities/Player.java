@@ -102,7 +102,7 @@ public class Player extends Entity {
         return file.exists();
     }
 
-    public static Player load(String name) {
+    public static Player load(String name) { // SMELLY :: 
         player = new Player();
         JsonParser parser = new JsonParser();
         String fileName = getProfileFileName(name);
@@ -175,7 +175,7 @@ public class Player extends Entity {
     // This is known as the singleton pattern. It allows for only 1 instance of a player.
     private static Player player;
     
-    public static Player getInstance(String playerClass){
+    public static Player getInstance(String playerClass){ // SMELLY ::
         player = new Player();
         JsonParser parser = new JsonParser();
         String fileName = "json/npcs.json";
@@ -246,7 +246,7 @@ public class Player extends Entity {
         if (weaponName.equals(null)) {
             weaponName = "hands";
         }
-        String message = "\nPlayer name: " + getName();
+        String message = "\nPlayer name: " + getName(); // SMELLY :: 
               message += "\nType: " + type;
               message += "\nCurrent weapon: " + weaponName;
               message += "\nGold: " + getGold();
@@ -369,7 +369,7 @@ public class Player extends Entity {
         if (itemMap.isEmpty()) {
             itemMap = searchEquipment(itemName, getEquipment());
         }
-        if (!itemMap.isEmpty()) {
+        if (!itemMap.isEmpty()) { // SMELLY :: 
             Item item = itemMap.get(0);
             Item itemToDrop = itemRepo.getItem(item.getId());
             Item weapon = itemRepo.getItem(getWeapon());
@@ -417,7 +417,7 @@ public class Player extends Entity {
               Entry<String, String> me = iter.next();
               double value = Double.parseDouble((String) me.getValue());
               switch ((String) me.getKey()) {
-                  case "damage": {
+                  case "damage": { // SMELLY ::
                           if (value >= 0.0) {
                               QueueProvider.offer(me.getKey() + ": " + this.getDamage() + " (+" + me.getValue() + ")");
                           } else {
@@ -479,7 +479,7 @@ public class Player extends Entity {
     }
 
     public void attack(String opponentName) throws DeathException {
-        Monster monsterOpponent = null;
+        Monster monsterOpponent = null; // SMELLY ::
         NPC npcOpponent = null;
         List<Monster> monsters = getLocation().getMonsters();
         List<NPC> npcs = getLocation().getNpcs();
