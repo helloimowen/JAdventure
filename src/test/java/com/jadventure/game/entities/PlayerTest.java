@@ -39,7 +39,7 @@ public class PlayerTest {
         Player player = Player.getInstance("sewerrat");
         int expected = 0;
         int actual = player.getArmour();
-        assertEquals("Failure - new recruit not properly created", expected, actual);
+        assertEquals("Failure - sewer rat not properly created", expected, actual);
     }
 
     @Test

@@ -39,5 +39,7 @@ public interface ILocation {
 
     Map<Direction, ILocation> getExits();
     void print();
+	NPC getNPC(String opponentName);
+	Monster getMonster(String opponentName);
 }
 

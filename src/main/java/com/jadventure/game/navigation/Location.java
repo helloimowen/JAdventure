@@ -152,6 +152,31 @@ public class Location implements ILocation {
     public List<Monster> getMonsters() {
         return monsters;
     }
+    
+    public Monster getMonster(String name) {
+    	
+
+		for (int i = 0; i < monsters.size(); i++) {
+			if (monsters.get(i).monsterType.equalsIgnoreCase(name)) {
+				return monsters.get(i);
+			}
+		}
+		return null;
+    }
+    
+    public NPC getNPC(String name) {
+    	
+
+		for (int i = 0; i < npcs.size(); i++) {
+			if (npcs.get(i).getName().equalsIgnoreCase(name)) {
+				return npcs.get(i);
+			}
+		}
+		return null;
+    }
+    
+    
+
 
     public Item removeItem(Item item) {
         return storage.remove(item);

@@ -43,469 +43,469 @@ import com.jadventure.game.repository.ItemRepository;
 import com.jadventure.game.repository.LocationRepository;
 
 /**
- * This class deals with the player and all of its properties.
- * Any method that changes a character or interacts with it should
- * be placed within this class. If a method deals with entities in general or
- * with variables not unique to the player, place it in the entity class.
+ * This class deals with the player and all of its properties. Any method that
+ * changes a character or interacts with it should be placed within this class.
+ * If a method deals with entities in general or with variables not unique to
+ * the player, place it in the entity class.
  */
 public class Player extends Entity {
-    // @Resource
-    protected static ItemRepository itemRepo = GameBeans.getItemRepository();
-    protected static LocationRepository locationRepo = GameBeans.getLocationRepository();
-    private ILocation location;
-    private int xp;
-    /** Player type */
-    private String type;
-    private static HashMap<String, Integer>characterLevels = new HashMap<String, Integer>();
+	// @Resource
+	protected static ItemRepository itemRepo = GameBeans.getItemRepository();
+	protected static LocationRepository locationRepo = GameBeans.getLocationRepository();
+	private ILocation location;
+	private int xp;
+	/** Player type */
+	private String type;
+	private static HashMap<String, Integer> characterLevels = new HashMap<String, Integer>();
 
-    public Player() {
-    }
+	public Player() {
+	}
 
-    protected static void setUpCharacterLevels() {
-        characterLevels.put("Sewer Rat", 5);
-        characterLevels.put("Recruit", 3);
-        characterLevels.put("Syndicate Member", 4);
-        characterLevels.put("Brotherhood Member", 4);
-    }
+	protected static void setUpCharacterLevels() {
+		characterLevels.put("Sewer Rat", 5);
+		characterLevels.put("Recruit", 3);
+		characterLevels.put("Syndicate Member", 4);
+		characterLevels.put("Brotherhood Member", 4);
+	}
 
-    public HashMap<String, Integer> getCharacterLevels() {
-        return characterLevels;
-    }
+	public HashMap<String, Integer> getCharacterLevels() {
+		return characterLevels;
+	}
 
-    public void setCharacterLevels(HashMap<String, Integer> newCharacterLevels) {
-        this.characterLevels = newCharacterLevels;
-    }
+	public void setCharacterLevels(HashMap<String, Integer> newCharacterLevels) {
+		this.characterLevels = newCharacterLevels;
+	}
 
-    public String getCurrentCharacterType() {
-        return this.type;
-    }
-    
-    public void setCurrentCharacterType(String newCharacterType) {
-        this.type = newCharacterType;
-    }
+	public String getCurrentCharacterType() {
+		return this.type;
+	}
 
-    public void setCharacterLevel(String characterType, int level) {
-        this.characterLevels.put(characterType, level);
-    }
+	public void setCurrentCharacterType(String newCharacterType) {
+		this.type = newCharacterType;
+	}
 
-    public int getCharacterLevel(String characterType) {
-        int characterLevel = this.characterLevels.get(characterType);
-        return characterLevel;
-    }
+	public void setCharacterLevel(String characterType, int level) {
+		this.characterLevels.put(characterType, level);
+	}
 
-    protected static String getProfileFileName(String name) {
-        return "json/profiles/" + name + "/" + name + "_profile.json";
-    }
+	public int getCharacterLevel(String characterType) {
+		int characterLevel = this.characterLevels.get(characterType);
+		return characterLevel;
+	}
 
-    public static boolean profileExists(String name) {
-        File file = new File(getProfileFileName(name));
-        return file.exists();
-    }
+	protected static String getProfileFileName(String name) {
+		return "json/profiles/" + name + "/" + name + "_profile.json";
+	}
 
-    public static Player load(String name) { // SMELLY :: 
-        player = new Player();
-        JsonParser parser = new JsonParser();
-        String fileName = getProfileFileName(name);
-        try {
-            Reader reader = new FileReader(fileName);
-            JsonObject json = parser.parse(reader).getAsJsonObject();
-            player.setName(json.get("name").getAsString());
-            player.setHealthMax(json.get("healthMax").getAsInt());
-            player.setHealth(json.get("health").getAsInt());
-            player.setArmour(json.get("armour").getAsInt());
-            player.setDamage(json.get("damage").getAsInt());
-            player.setLevel(json.get("level").getAsInt());
-            player.setXP(json.get("xp").getAsInt());
-            player.setStrength(json.get("strength").getAsInt());
-            player.setIntelligence(json.get("intelligence").getAsInt());
-            player.setDexterity(json.get("dexterity").getAsInt());
-            player.setLuck(json.get("luck").getAsInt());
-            player.setStealth(json.get("stealth").getAsInt());
-            player.setCurrentCharacterType(json.get("type").getAsString());
-            HashMap<String, Integer> charLevels = new Gson().fromJson(json.get("types"), new TypeToken<HashMap<String, Integer>>(){}.getType());
-            player.setCharacterLevels(charLevels);
-            if (json.has("equipment")) {
-                Map<String, EquipmentLocation> locations = new HashMap<>();
-                locations.put("head", EquipmentLocation.HEAD);
-                locations.put("chest", EquipmentLocation.CHEST);
-                locations.put("leftArm", EquipmentLocation.LEFT_ARM);
-                locations.put("leftHand", EquipmentLocation.LEFT_HAND);
-                locations.put("rightArm", EquipmentLocation.RIGHT_ARM);
-                locations.put("rightHand", EquipmentLocation.RIGHT_HAND);
-                locations.put("bothHands", EquipmentLocation.BOTH_HANDS);
-                locations.put("bothArms", EquipmentLocation.BOTH_ARMS);
-                locations.put("legs", EquipmentLocation.LEGS);
-                locations.put("feet", EquipmentLocation.FEET);
-                HashMap<String, String> equipment = new Gson().fromJson(json.get("equipment"), new TypeToken<HashMap<String, String>>(){}.getType());
-               Map<EquipmentLocation, Item> equipmentMap = new HashMap<>();
-               for(Map.Entry<String, String> entry : equipment.entrySet()) {
-                   EquipmentLocation el = locations.get(entry.getKey());
-                   Item i = itemRepo.getItem(entry.getValue());
-                   equipmentMap.put(el, i);
-               }
-               player.setEquipment(equipmentMap);
-            }
-            if (json.has("items")) {
-                HashMap<String, Integer> items = new Gson().fromJson(json.get("items"), new TypeToken<HashMap<String, Integer>>(){}.getType());
-                ArrayList<ItemStack> itemList = new ArrayList<>();
-                for (Map.Entry<String, Integer> entry : items.entrySet()) {
-                    String itemID = entry.getKey();
-                    int amount = entry.getValue();
-                    Item item = itemRepo.getItem(itemID);
-                    ItemStack itemStack = new ItemStack(amount, item);
-                    itemList.add(itemStack);
-                }
-                float maxWeight = (float)Math.sqrt(player.getStrength()*300);
-                player.setStorage(new Storage(maxWeight, itemList));
-            }
-            Coordinate coordinate = new Coordinate(json.get("location").getAsString());
-            locationRepo = GameBeans.getLocationRepository(player.getName());
-            player.setLocation(locationRepo.getLocation(coordinate));
-            reader.close();
-            setUpCharacterLevels();
-        } catch (FileNotFoundException ex) {
-            QueueProvider.offer( "Unable to open file '" + fileName + "'.");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+	public static boolean profileExists(String name) {
+		File file = new File(getProfileFileName(name));
+		return file.exists();
+	}
 
-        return player;
-    }
+	public static Player load(String name) {
+		player = new Player();
+		JsonParser parser = new JsonParser();
+		String fileName = getProfileFileName(name);
+		try {
+			Reader reader = new FileReader(fileName);
+			JsonObject json = parser.parse(reader).getAsJsonObject();
+			
+			player = setPlayer(player, json); 
+			
+			player.setLuck(json.get("luck").getAsInt());
 
-    // This is known as the singleton pattern. It allows for only 1 instance of a player.
-    private static Player player;
-    
-    public static Player getInstance(String playerClass){ // SMELLY ::
-        player = new Player();
-        JsonParser parser = new JsonParser();
-        String fileName = "json/npcs.json";
-        try {
-            Reader reader = new FileReader(fileName);
-            JsonObject npcs = parser.parse(reader).getAsJsonObject().get("npcs").getAsJsonObject();
-            JsonObject json = new JsonObject();
-            for (Map.Entry<String, JsonElement> entry : npcs.entrySet()) {
-                if (entry.getKey().equals(playerClass)) {
-                    json = entry.getValue().getAsJsonObject();
-                }
-            }
+			player.setCurrentCharacterType(json.get("type").getAsString());
+			HashMap<String, Integer> charLevels = new Gson().fromJson(json.get("types"),
+					new TypeToken<HashMap<String, Integer>>() {
+					}.getType());
+			player.setCharacterLevels(charLevels);
+			if (json.has("equipment")) {
+				Map<String, EquipmentLocation> locations = new HashMap<>();
+				locations.put("head", EquipmentLocation.HEAD);
+				locations.put("chest", EquipmentLocation.CHEST);
+				locations.put("leftArm", EquipmentLocation.LEFT_ARM);
+				locations.put("leftHand", EquipmentLocation.LEFT_HAND);
+				locations.put("rightArm", EquipmentLocation.RIGHT_ARM);
+				locations.put("rightHand", EquipmentLocation.RIGHT_HAND);
+				locations.put("bothHands", EquipmentLocation.BOTH_HANDS);
+				locations.put("bothArms", EquipmentLocation.BOTH_ARMS);
+				locations.put("legs", EquipmentLocation.LEGS);
+				locations.put("feet", EquipmentLocation.FEET);
+				HashMap<String, String> equipment = new Gson().fromJson(json.get("equipment"),
+						new TypeToken<HashMap<String, String>>() {
+						}.getType());
+				Map<EquipmentLocation, Item> equipmentMap = new HashMap<>();
+				for (Map.Entry<String, String> entry : equipment.entrySet()) {
+					EquipmentLocation el = locations.get(entry.getKey());
+					Item i = itemRepo.getItem(entry.getValue());
+					equipmentMap.put(el, i);
+				}
+				player.setEquipment(equipmentMap);
+			}
+			if (json.has("items")) {
+				HashMap<String, Integer> items = new Gson().fromJson(json.get("items"),
+						new TypeToken<HashMap<String, Integer>>() {
+						}.getType());
+				ArrayList<ItemStack> itemList = new ArrayList<>();
+				for (Map.Entry<String, Integer> entry : items.entrySet()) {
+					String itemID = entry.getKey();
+					int amount = entry.getValue();
+					Item item = itemRepo.getItem(itemID);
+					ItemStack itemStack = new ItemStack(amount, item);
+					itemList.add(itemStack);
+				}
+				float maxWeight = (float) Math.sqrt(player.getStrength() * 300);
+				player.setStorage(new Storage(maxWeight, itemList));
+			}
+			Coordinate coordinate = new Coordinate(json.get("location").getAsString());
+			locationRepo = GameBeans.getLocationRepository(player.getName());
+			player.setLocation(locationRepo.getLocation(coordinate));
+			reader.close();
+			setUpCharacterLevels();
+		} catch (FileNotFoundException ex) {
+			QueueProvider.offer("Unable to open file '" + fileName + "'.");
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 
-            player.setName(json.get("name").getAsString());
-            player.setHealthMax(json.get("healthMax").getAsInt());
-            player.setHealth(json.get("health").getAsInt());
-            player.setArmour(json.get("armour").getAsInt());
-            player.setDamage(json.get("damage").getAsInt());
-            player.setLevel(json.get("level").getAsInt());
-            player.setXP(json.get("xp").getAsInt());
-            player.setStrength(json.get("strength").getAsInt());
-            player.setIntelligence(json.get("intelligence").getAsInt());
-            player.setDexterity(json.get("dexterity").getAsInt());
-            setUpVariables(player);
-            JsonArray items = json.get("items").getAsJsonArray();
-            for (JsonElement item : items) {
-                player.addItemToStorage(itemRepo.getItem(item.getAsString()));
-            }
-            Random rand = new Random();
-            int luck = rand.nextInt(3) + 1;
-            player.setLuck(luck);
-            player.setStealth(json.get("stealth").getAsInt());
-            player.setIntro(json.get("intro").getAsString());
-            if (player.getName().equals("Recruit")) {
-                player.type = "Recruit";
-            } else if (player.getName().equals("Sewer Rat")) {
-                player.type = "Sewer Rat";
-            } else {
-                QueueProvider.offer("Not a valid class");
-            }
-            reader.close();
-            setUpCharacterLevels();
-        } catch (FileNotFoundException ex) {
-            QueueProvider.offer( "Unable to open file '" + fileName + "'.");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+		return player;
+	}
 
-        return player;
-    } 
+	public static Player setPlayer(Player player, JsonObject json) {
+		player.setName(json.get("name").getAsString());
+		player.setHealthMax(json.get("healthMax").getAsInt());
+		player.setHealth(json.get("health").getAsInt());
+		player.setArmour(json.get("armour").getAsInt());
+		player.setDamage(json.get("damage").getAsInt());
+		player.setLevel(json.get("level").getAsInt());
+		player.setXP(json.get("xp").getAsInt());
+		player.setStrength(json.get("strength").getAsInt());
+		player.setIntelligence(json.get("intelligence").getAsInt());
+		player.setDexterity(json.get("dexterity").getAsInt());
+		player.setStealth(json.get("stealth").getAsInt());
 
-    public int getXP() {
-        return xp;
-    }
+		return player;
+	}
 
-    public void setXP(int xp) {
-        this.xp = xp;
-    }
+	// This is known as the singleton pattern. It allows for only 1 instance of a
+	// player.
+	private static Player player;
 
-    public static void setUpVariables(Player player) {
-        float maxWeight = (float)Math.sqrt(player.getStrength()*300);
-        player.setStorage(new Storage(maxWeight));
-    }
+	public static Player getInstance(String playerClass) { // SMELLY ::
+		player = new Player();
+		JsonParser parser = new JsonParser();
+		String fileName = "json/npcs.json";
+		try {
+			Reader reader = new FileReader(fileName);
+			JsonObject npcs = parser.parse(reader).getAsJsonObject().get("npcs").getAsJsonObject();
+			JsonObject json = new JsonObject();
+			for (Map.Entry<String, JsonElement> entry : npcs.entrySet()) {
+				if (entry.getKey().equals(playerClass)) {
+					json = entry.getValue().getAsJsonObject();
+				}
+			}
+			
+			player = setPlayer(player, json); // sets a few key items. 
+			
+			setUpVariables(player);
+			JsonArray items = json.get("items").getAsJsonArray();
+			for (JsonElement item : items) {
+				player.addItemToStorage(itemRepo.getItem(item.getAsString()));
+			}
+			
+			Random rand = new Random();
+			int luck = rand.nextInt(3) + 1;
+			player.setLuck(luck);
+			
+			if (player.getName().equals("Recruit")) {
+				player.type = "Recruit";
+			} else if (player.getName().equals("Sewer Rat")) {
+				player.type = "Sewer Rat";
+			} else {
+				QueueProvider.offer("Not a valid class");
+			}
+			reader.close();
+			setUpCharacterLevels();
+		} catch (FileNotFoundException ex) {
+			QueueProvider.offer("Unable to open file '" + fileName + "'.");
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 
-    public void getStats(){
-        Item weapon = itemRepo.getItem(getWeapon());
-        String weaponName = weapon.getName();
-        if (weaponName.equals(null)) {
-            weaponName = "hands";
-        }
-        String message = "\nPlayer name: " + getName(); // SMELLY :: 
-              message += "\nType: " + type;
-              message += "\nCurrent weapon: " + weaponName;
-              message += "\nGold: " + getGold();
-              message += "\nHealth/Max: " + getHealth() + "/" + getHealthMax();
-              message += "\nDamage/Armour: " + getDamage() + "/" + getArmour();
-              message += "\nStrength: " + getStrength();
-              message += "\nIntelligence: " + getIntelligence();
-              message += "\nDexterity: " + getDexterity();
-              message += "\nLuck: " + getLuck();
-              message += "\nStealth: " + getStealth();
-              message += "\nXP: " + getXP();
-              message += "\n" + getName() + "'s level: " + getLevel();
-        QueueProvider.offer(message);
-    }
+		return player;
+	}
 
-    public void printBackPack() {
-        storage.display();
-    }
+	public int getXP() {
+		return xp;
+	}
 
-    public void save() {
-        Gson gson = new Gson();
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("name", getName());
-        jsonObject.addProperty("healthMax", getHealthMax());
-        jsonObject.addProperty("health", getHealthMax());
-        jsonObject.addProperty("armour", getArmour());
-        jsonObject.addProperty("damage", getDamage());
-        jsonObject.addProperty("level", getLevel());
-        jsonObject.addProperty("xp", getXP());
-        jsonObject.addProperty("strength", getStrength());
-        jsonObject.addProperty("intelligence", getIntelligence());
-        jsonObject.addProperty("dexterity", getDexterity());
-        jsonObject.addProperty("luck", getLuck());
-        jsonObject.addProperty("stealth", getStealth());
-        jsonObject.addProperty("weapon", getWeapon());
-        jsonObject.addProperty("type", getCurrentCharacterType());
-        HashMap<String, Integer> items = new HashMap<String, Integer>();
-        for (ItemStack item : getStorage().getItemStack()) {
-            items.put(item.getItem().getId(), item.getAmount());
-        }
-        JsonElement itemsJsonObj = gson.toJsonTree(items);
-        jsonObject.add("items", itemsJsonObj);
-        Map<EquipmentLocation, String> locations = new HashMap<>();
-        locations.put(EquipmentLocation.HEAD, "head");
-        locations.put(EquipmentLocation.CHEST, "chest");
-        locations.put(EquipmentLocation.LEFT_ARM, "leftArm");
-        locations.put(EquipmentLocation.LEFT_HAND, "leftHand");
-        locations.put(EquipmentLocation.RIGHT_ARM, "rightArm");
-        locations.put(EquipmentLocation.RIGHT_HAND, "rightHand");
-        locations.put(EquipmentLocation.BOTH_HANDS, "BothHands");
-        locations.put(EquipmentLocation.BOTH_ARMS, "bothArms");
-        locations.put(EquipmentLocation.LEGS, "legs");
-        locations.put(EquipmentLocation.FEET, "feet");
-        HashMap<String, String> equipment = new HashMap<>();
-        Item hands = itemRepo.getItem("hands");
-        for (Map.Entry<EquipmentLocation, Item> item : getEquipment().entrySet()) {
-            if (item.getKey() != null && !hands.equals(item.getValue()) && item.getValue() != null) {
-                equipment.put(locations.get(item.getKey()), item.getValue().getId());
-            }
-        }
-        JsonElement equipmentJsonObj = gson.toJsonTree(equipment);
-        jsonObject.add("equipment", equipmentJsonObj);
-        JsonElement typesJsonObj = gson.toJsonTree(getCharacterLevels());
-        jsonObject.add("types", typesJsonObj);
-        Coordinate coordinate = getLocation().getCoordinate();
-        String coordinateLocation = coordinate.x+","+coordinate.y+","+coordinate.z;
-        jsonObject.addProperty("location", coordinateLocation);
+	public void setXP(int xp) {
+		this.xp = xp;
+	}
 
-        String fileName = getProfileFileName(getName());
-        new File(fileName).getParentFile().mkdirs();
-        try {
-            Writer writer = new FileWriter(fileName);
-            gson.toJson(jsonObject, writer);
-            writer.close();
-            locationRepo = GameBeans.getLocationRepository(getName());
-            locationRepo.writeLocations();
-            QueueProvider.offer("\nYour game data was saved.");
-        } catch (IOException ex) {
-            QueueProvider.offer("\nUnable to save to file '" + fileName + "'.");
-        }
-    }
+	public static void setUpVariables(Player player) {
+		float maxWeight = (float) Math.sqrt(player.getStrength() * 300);
+		player.setStorage(new Storage(maxWeight));
+	}
 
-    public List<Item> searchItem(String itemName, List<Item> itemList) {
-        List<Item> items = new ArrayList<>();
-        for (Item item : itemList) {
-            String testItemName = item.getName();
-            if (testItemName.equalsIgnoreCase(itemName)) {
-                items.add(item);
-            }
-        }
-        return items;
-    }
+	public void getStats() {
+		Item weapon = itemRepo.getItem(getWeapon());
+		String weaponName = weapon.getName();
+		if (weaponName.equals(null)) {
+			weaponName = "hands";
+		}
+		StringBuffer message = new StringBuffer();
+		message.append("\nPlayer name: " + getName()); // SMELLY ::
+		message.append("\nType: " + type);
+		message.append("\nCurrent weapon: " + weaponName);
+		message.append("\nGold: " + getGold());
+		message.append("\nHealth/Max: " + getHealth() + "/" + getHealthMax());
+		message.append("\nDamage/Armour: " + getDamage() + "/" + getArmour());
+		message.append("\nStrength: " + getStrength());
+		message.append("\nIntelligence: " + getIntelligence());
+		message.append("\nDexterity: " + getDexterity());;
+		message.append("\nLuck: " + getLuck());
+		message.append("\nStealth: " + getStealth());
+		message.append("\nXP: " + getXP());
+		message.append("\n" + getName() + "'s level: " + getLevel());
+		QueueProvider.offer(message.toString());
+	}
 
-    public List<Item> searchItem(String itemName, Storage storage) {
-        return storage.search(itemName);
-    }
-    
-    public List<Item> searchEquipment(String itemName, Map<EquipmentLocation, Item> equipment) {
-        List<Item> items = new ArrayList<>();
-        for (Item item : equipment.values()) {
-            if (item != null && item.getName().equals(itemName)) {
-                items.add(item);
-            }
-        }
-        return items;
-    }
+	public void printBackPack() {
+		storage.display();
+	}
 
-    public void pickUpItem(String itemName) {
-        List<Item> items = searchItem(itemName, getLocation().getItems());
-        if (! items.isEmpty()) {
-            Item item = items.get(0);
-            addItemToStorage(item);
-            location.removeItem(item);
-            QueueProvider.offer(item.getName()+ " picked up");
-        }
-    }
+	public void save() {
+		Gson gson = new Gson();
+		JsonObject jsonObject = new JsonObject();
+		jsonObject.addProperty("name", getName());
+		jsonObject.addProperty("healthMax", getHealthMax());
+		jsonObject.addProperty("health", getHealthMax());
+		jsonObject.addProperty("armour", getArmour());
+		jsonObject.addProperty("damage", getDamage());
+		jsonObject.addProperty("level", getLevel());
+		jsonObject.addProperty("xp", getXP());
+		jsonObject.addProperty("strength", getStrength());
+		jsonObject.addProperty("intelligence", getIntelligence());
+		jsonObject.addProperty("dexterity", getDexterity());
+		jsonObject.addProperty("luck", getLuck());
+		jsonObject.addProperty("stealth", getStealth());
+		jsonObject.addProperty("weapon", getWeapon());
+		jsonObject.addProperty("type", getCurrentCharacterType());
+		HashMap<String, Integer> items = new HashMap<String, Integer>();
+		for (ItemStack item : getStorage().getItemStack()) {
+			items.put(item.getItem().getId(), item.getAmount());
+		}
+		JsonElement itemsJsonObj = gson.toJsonTree(items);
+		jsonObject.add("items", itemsJsonObj);
+		Map<EquipmentLocation, String> locations = new HashMap<>();
+		locations.put(EquipmentLocation.HEAD, "head");
+		locations.put(EquipmentLocation.CHEST, "chest");
+		locations.put(EquipmentLocation.LEFT_ARM, "leftArm");
+		locations.put(EquipmentLocation.LEFT_HAND, "leftHand");
+		locations.put(EquipmentLocation.RIGHT_ARM, "rightArm");
+		locations.put(EquipmentLocation.RIGHT_HAND, "rightHand");
+		locations.put(EquipmentLocation.BOTH_HANDS, "BothHands");
+		locations.put(EquipmentLocation.BOTH_ARMS, "bothArms");
+		locations.put(EquipmentLocation.LEGS, "legs");
+		locations.put(EquipmentLocation.FEET, "feet");
+		HashMap<String, String> equipment = new HashMap<>();
+		Item hands = itemRepo.getItem("hands");
+		for (Map.Entry<EquipmentLocation, Item> item : getEquipment().entrySet()) {
+			if (item.getKey() != null && !hands.equals(item.getValue()) && item.getValue() != null) {
+				equipment.put(locations.get(item.getKey()), item.getValue().getId());
+			}
+		}
+		JsonElement equipmentJsonObj = gson.toJsonTree(equipment);
+		jsonObject.add("equipment", equipmentJsonObj);
+		JsonElement typesJsonObj = gson.toJsonTree(getCharacterLevels());
+		jsonObject.add("types", typesJsonObj);
+		Coordinate coordinate = getLocation().getCoordinate();
+		String coordinateLocation = coordinate.x + "," + coordinate.y + "," + coordinate.z;
+		jsonObject.addProperty("location", coordinateLocation);
 
-    public void dropItem(String itemName) {
-        List<Item> itemMap = searchItem(itemName, getStorage());
-        if (itemMap.isEmpty()) {
-            itemMap = searchEquipment(itemName, getEquipment());
-        }
-        if (!itemMap.isEmpty()) { // SMELLY :: 
-            Item item = itemMap.get(0);
-            Item itemToDrop = itemRepo.getItem(item.getId());
-            Item weapon = itemRepo.getItem(getWeapon());
-            String wName = weapon.getName();
+		String fileName = getProfileFileName(getName());
+		new File(fileName).getParentFile().mkdirs();
+		try {
+			Writer writer = new FileWriter(fileName);
+			gson.toJson(jsonObject, writer);
+			writer.close();
+			locationRepo = GameBeans.getLocationRepository(getName());
+			locationRepo.writeLocations();
+			QueueProvider.offer("\nYour game data was saved.");
+		} catch (IOException ex) {
+			QueueProvider.offer("\nUnable to save to file '" + fileName + "'.");
+		}
+	}
 
-            if (itemName.equals(wName)) {
-                dequipItem(wName);
-            }
-            removeItemFromStorage(itemToDrop);
-            location.addItem(itemToDrop);
-            QueueProvider.offer(item.getName() + " dropped");
-        }
-    }
+	public List<Item> searchItem(String itemName, List<Item> itemList) {
+		List<Item> items = new ArrayList<>();
+		for (Item item : itemList) {
+			String testItemName = item.getName();
+			if (testItemName.equalsIgnoreCase(itemName)) {
+				items.add(item);
+			}
+		}
+		return items;
+	}
 
-    public void equipItem(String itemName) {
-        List<Item> items = searchItem(itemName, getStorage());
-        if (!items.isEmpty()) {
-            Item item = items.get(0);
-            if (getLevel() >= item.getLevel()) {
-                Map<String, String> change = equipItem(item.getPosition(), item);
-                QueueProvider.offer(item.getName()+ " equipped");
-                printStatChange(change);
-            } else {
-                QueueProvider.offer("You do not have the required level to use this item");
-            }
-        } else {
-            QueueProvider.offer("You do not have that item");
-        }
-    }
+	public List<Item> searchItem(String itemName, Storage storage) {
+		return storage.search(itemName);
+	}
 
-    public void dequipItem(String itemName) {
-         List<Item> items = searchEquipment(itemName, getEquipment());
-         if (!items.isEmpty()) {
-            Item item = items.get(0);
-            Map<String, String> change = unequipItem(item);
-            QueueProvider.offer(item.getName()+" unequipped");
-	        printStatChange(change);
-         }
-    }
+	public List<Item> searchEquipment(String itemName, Map<EquipmentLocation, Item> equipment) {
+		List<Item> items = new ArrayList<>();
+		for (Item item : equipment.values()) {
+			if (item != null && item.getName().equals(itemName)) {
+				items.add(item);
+			}
+		}
+		return items;
+	}
 
-    private void printStatChange(Map<String, String> stats) {
-         Set<Entry<String, String>> set = stats.entrySet();
-         Iterator<Entry<String, String>> iter = set.iterator();
-         while (iter.hasNext()) {
-              Entry<String, String> me = iter.next();
-              double value = Double.parseDouble((String) me.getValue());
-              switch ((String) me.getKey()) {
-                  case "damage": { // SMELLY ::
-                          if (value >= 0.0) {
-                              QueueProvider.offer(me.getKey() + ": " + this.getDamage() + " (+" + me.getValue() + ")");
-                          } else {
-                              QueueProvider.offer(me.getKey() + ": " + this.getDamage() + " (" + me.getValue() + ")");
-                          }
-                          break;
-                    }
-                    case "health": {
-                          if (value >= 0) {
-                              QueueProvider.offer(me.getKey() + ": " + this.getHealth() + " (+" + me.getValue() + ")");
-                          } else {
-                              QueueProvider.offer(me.getKey() + ": " + this.getHealth() + " (" + me.getValue() + ")");
-                          }
-                          break;
-                    }
-                    case "armour": {
-                          if (value >= 0) {
-                              QueueProvider.offer(me.getKey() + ": " + this.getArmour() + " (+" + me.getValue() + ")");
-                          } else {
-                              QueueProvider.offer(me.getKey() + ": " + this.getArmour() + " (" + me.getValue() + ")");
-                          }
-                          break;
-                    }
-                    case "maxHealth": {
-                          if (value  >= 0) {
-                              QueueProvider.offer(me.getKey() + ": " + this.getHealthMax() + " (+" + me.getValue() + ")");
-                          } else {
-                              QueueProvider.offer(me.getKey() + ": " + this.getHealthMax() + " (" + me.getValue() + ")");
-                          }
-                          break;
-                    }
-              }
-         }
-    }
+	public void pickUpItem(String itemName) {
+		List<Item> items = searchItem(itemName, getLocation().getItems());
+		if (!items.isEmpty()) {
+			Item item = items.get(0);
+			addItemToStorage(item);
+			location.removeItem(item);
+			QueueProvider.offer(item.getName() + " picked up");
+		}
+	}
 
-    public void inspectItem(String itemName) {
-        List<Item> itemMap = searchItem(itemName, getStorage());
-        if (itemMap.isEmpty()) {
-            itemMap = searchItem(itemName, getLocation().getItems());
-        }
-        if (!itemMap.isEmpty()) {
-            Item item = itemMap.get(0);
-            item.display();
-        } else {
-            QueueProvider.offer("Item doesn't exist within your view.");
-        }
-    }
+	public void dropItem(String itemName) {
+		List<Item> itemMap = searchItem(itemName, getStorage());
+		if (itemMap.isEmpty()) {
+			itemMap = searchEquipment(itemName, getEquipment());
+		}
+		
+		if (!itemMap.isEmpty()) {
+			Item item = itemMap.get(0);
+			Item itemToDrop = itemRepo.getItem(item.getId());
+			Item weapon = itemRepo.getItem(getWeapon());
+			String wName = weapon.getName();
 
-    public ILocation getLocation() {
-        return location;
-    }
+			if (itemName.equals(wName)) {
+				dequipItem(wName);
+			}
+			removeItemFromStorage(itemToDrop);
+			location.addItem(itemToDrop);
+			QueueProvider.offer(item.getName() + " dropped");
+		}
+	}
 
-    public void setLocation(ILocation location) {
-        this.location = location;
-    }
+	public void equipItem(String itemName) {
+		List<Item> items = searchItem(itemName, getStorage());
+		if (!items.isEmpty()) {
+			Item item = items.get(0);
+			if (getLevel() >= item.getLevel()) {
+				Map<String, String> change = equipItem(item.getPosition(), item);
+				QueueProvider.offer(item.getName() + " equipped");
+				printStatChange(change);
+			} else {
+				QueueProvider.offer("You do not have the required level to use this item");
+			}
+		} else {
+			QueueProvider.offer("You do not have that item");
+		}
+	}
 
-    public LocationType getLocationType() {
-    	return getLocation().getLocationType();
-    }
+	public void dequipItem(String itemName) {
+		List<Item> items = searchEquipment(itemName, getEquipment());
+		if (!items.isEmpty()) {
+			Item item = items.get(0);
+			Map<String, String> change = unequipItem(item);
+			QueueProvider.offer(item.getName() + " unequipped");
+			printStatChange(change);
+		}
+	}
+	
+	private String createResponse(Entry<String, String> me, double value, double stat)
+	{
+		StringBuffer response = new StringBuffer(); 
+		response.append(me.getKey()).append(": ").append(stat);
+		if (value >= 0.0)
+			response.append(" (+");
+		else
+			response.append(" (");
+		
+		response.append(me.getValue()); 
+		response.append(")");
+		
+		return response.toString(); 
+	}
 
-    public void attack(String opponentName) throws DeathException {
-        Monster monsterOpponent = null; // SMELLY ::
-        NPC npcOpponent = null;
-        List<Monster> monsters = getLocation().getMonsters();
-        List<NPC> npcs = getLocation().getNpcs();
-        for (int i = 0; i < monsters.size(); i++) {
-             if (monsters.get(i).monsterType.equalsIgnoreCase(opponentName)) {
-                 monsterOpponent = monsters.get(i);
-             }
-        }
-        for (int i=0; i < npcs.size(); i++) {
-            if (npcs.get(i).getName().equalsIgnoreCase(opponentName)) {
-                npcOpponent = npcs.get(i);
-            }
-        }
-        if (monsterOpponent != null) {
-            monsterOpponent.setName(monsterOpponent.monsterType);
-            new BattleMenu(monsterOpponent, this);
-        } else if (npcOpponent != null) {
-            new BattleMenu(npcOpponent, this);
-        } else {
-             QueueProvider.offer("Opponent not found");
-        }
-    }
+	private void printStatChange(Map<String, String> stats) {
+		Set<Entry<String, String>> set = stats.entrySet();
+		Iterator<Entry<String, String>> iter = set.iterator();
+		while (iter.hasNext()) {
+			Entry<String, String> me = iter.next();
+			double value = Double.parseDouble((String) me.getValue());
+			switch ((String) me.getKey()) {
+			
+			
+			case "damage": {
+				QueueProvider.offer(createResponse(me, value, this.getDamage())); 
+				break;
+			}
+			case "health": {
+				QueueProvider.offer(createResponse(me, value, this.getHealth())); 
+				break;
+			}
+			case "armour": {
+				QueueProvider.offer(createResponse(me, value, this.getArmour())); 
+				break;
+			}
+			case "maxHealth": {
+				QueueProvider.offer(createResponse(me, value, this.getHealthMax())); 
+				break;
+			}
+			}
+		}
+	}
 
-    public boolean hasItem(Item item) {
-        List<Item> searchEquipment = searchEquipment(item.getName(), getEquipment());
-        List<Item> searchStorage = searchItem(item.getName(), getStorage());
-        return !(searchEquipment.size() == 0 && searchStorage.size() == 0);
-    }
+	public void inspectItem(String itemName) {
+		List<Item> itemMap = searchItem(itemName, getStorage());
+		if (itemMap.isEmpty()) {
+			itemMap = searchItem(itemName, getLocation().getItems());
+		}
+		if (!itemMap.isEmpty()) {
+			Item item = itemMap.get(0);
+			item.display();
+		} else {
+			QueueProvider.offer("Item doesn't exist within your view.");
+		}
+	}
+
+	public ILocation getLocation() {
+		return location;
+	}
+
+	public void setLocation(ILocation location) {
+		this.location = location;
+	}
+
+	public LocationType getLocationType() {
+		return getLocation().getLocationType();
+	}
+
+	public void attack(String opponentName) throws DeathException {
+		Monster monsterOpponent = getLocation().getMonster(opponentName); 
+		NPC npcOpponent = getLocation().getNPC(opponentName);
+		if (monsterOpponent != null) {
+			monsterOpponent.setName(monsterOpponent.monsterType);
+			new BattleMenu(monsterOpponent, this);
+		} else if (npcOpponent != null) {
+			new BattleMenu(npcOpponent, this);
+		} else {
+			QueueProvider.offer("Opponent not found");
+		}
+	}
+
+	public boolean hasItem(Item item) {
+		List<Item> searchEquipment = searchEquipment(item.getName(), getEquipment());
+		List<Item> searchStorage = searchItem(item.getName(), getStorage());
+		return !(searchEquipment.size() == 0 && searchStorage.size() == 0);
+	}
 }
+
