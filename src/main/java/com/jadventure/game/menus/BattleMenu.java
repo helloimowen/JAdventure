@@ -262,7 +262,11 @@ public class BattleMenu extends Menus {
     	}
         
         this.player.setGold(this.player.getGold() + opponent.getGold());
-        QueueProvider.offer("You killed a " + opponent.getName() + "\nYou have gained " + xp + " XP and " + opponent.getGold() + " gold");
+        StringBuffer sb = new StringBuffer("");
+        sb.append("You killed a ").append(opponent.getName());
+        sb.append("\nYou have gained ").append(xp).append(" XP");
+        sb.append(" and ").append(opponent.getGold()).append(" gold");
+        QueueProvider.offer(sb.toString());
         if (oldLevel < newLevel) {
             QueueProvider.offer("You've are now level " + newLevel + "!");
         }
