@@ -271,16 +271,15 @@ public class BattleMenu extends Menus {
     }
     
     public void opponentLoot() {
-    	// Iterates over the npc's items and if there are any, drops them. 
-        // There are two loops due to a ConcurrentModification Exception that occurs
-        // if you try to remove the item while looping through the npc's items.
-        List<ItemStack> itemStacks = opponent.getStorage().getItemStack();
         List<String> itemIds = new ArrayList<>();
-        for (ItemStack itemStack : itemStacks) {
-            String itemId = itemStack.getItem().getId();
-            itemIds.add(itemId);
+        for (ItemStack itemStack : opponent.getStorage().getItemStack()) {
+            itemIds.add(itemStack.getItem().getId());
         }
-        for (String itemId : itemIds) {
+        dropLoot(itemIds);
+    }
+    
+    public void dropLoot(List<String> itemIds) {
+    	for (String itemId : itemIds) {
             Item item = GameBeans.getItemRepository().getItem(itemId);
             opponent.removeItemFromStorage(item);
             this.player.getLocation().addItem(item);
