@@ -242,10 +242,13 @@ public class BattleMenu extends Menus {
     
     public void opponentDeath() {
     	int xp;
+    	opponentLoot();
     	if (npcOpponent == null) {
     		xp = ((Monster)opponent).getXPGain();
+    		this.player.getLocation().removeMonster((Monster)opponent);
     	} else {
     		xp = ((NPC)opponent).getXPGain();
+    		this.player.getLocation().removeNpc((NPC)opponent);
     	}
     	
         this.player.setXP(this.player.getXP() + xp);
@@ -254,12 +257,6 @@ public class BattleMenu extends Menus {
         this.player.setLevel(newLevel);
         
         opponentLoot();
-
-        if (npcOpponent == null) {
-        	this.player.getLocation().removeMonster((Monster)opponent);
-    	} else {
-    		this.player.getLocation().removeNpc((NPC)opponent);
-    	}
         
         this.player.setGold(this.player.getGold() + opponent.getGold());
         StringBuffer sb = new StringBuffer("");
