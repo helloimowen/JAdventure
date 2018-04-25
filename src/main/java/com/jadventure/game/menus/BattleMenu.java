@@ -70,14 +70,14 @@ public class BattleMenu extends Menus {
         }
     }
     
-    private void attack() {
+    private void attackAction() {
     	mutateStats(0.5, 1);
     	attack(player, opponent);
     	attack(opponent, player);
     	resetStats();
     }
     
-    private void defend() {
+    private void defendAction() {
     	mutateStats(0.5, 1);
         QueueProvider.offer("\nYou get ready to defend against the " + opponent.getName() + ".");
         attack(player, opponent);
@@ -89,11 +89,11 @@ public class BattleMenu extends Menus {
     private void testSelected(MenuItem m) {
         switch (m.getKey()) {
             case "attack": {
-                attack();
+                attackAction();
                 break;
             }
             case "defend": {
-                defend();
+                defendAction();
                 break;
             }
             case "escape": {
