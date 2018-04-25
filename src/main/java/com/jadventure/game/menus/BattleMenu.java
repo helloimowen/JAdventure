@@ -19,172 +19,87 @@ public class BattleMenu extends Menus {
 
     private Monster monsterOpponent;
     private NPC npcOpponent;
+    private Entity opponent;
     private Player player;
     private Random random;
     private int armour;
     private double damage;
     private int escapeSuccessfulAttempts = 0;
-
-    public BattleMenu(NPC npcOpponent, Player player) throws DeathException {
-        this.random = new Random();
-        this.npcOpponent = npcOpponent;
+    
+    private BattleMenu(Entity opponent, Player player) throws DeathException {
+    	this.random = new Random();
+        this.opponent = opponent;
         this.player = player;
-        this.menuItems.add(new MenuItem("Attack", "Attack " + npcOpponent.getName() + "."));
-        this.menuItems.add(new MenuItem("Defend", "Defend against " + npcOpponent.getName() + "'s attack."));
-        this.menuItems.add(new MenuItem("Escape", "Try and escape from " + npcOpponent.getName()));
-        this.menuItems.add(new MenuItem("Equip", "Equip an item"));
-        this.menuItems.add(new MenuItem("Unequip", "Unequip an item"));
-        this.menuItems.add(new MenuItem("View", "View details about your character"));
+        this.buildBattleMenu();
         this.armour = player.getArmour();
         this.damage = player.getDamage();
-        while (npcOpponent.getHealth() > 0 && player.getHealth() > 0 && (escapeSuccessfulAttempts <= 0)) {
-            QueueProvider.offer("\nWhat is your choice?");
-            MenuItem selectedItem = displayMenu(this.menuItems);
-            testSelected(selectedItem);
-        }
-        if (player.getHealth() == 0) {
-            QueueProvider.offer("You died... Start again? (y/n)");
-            String reply = QueueProvider.take().toLowerCase();
-            while (!reply.startsWith("y") && !reply.startsWith("n")) {
-                QueueProvider.offer("You died... Start again? (y/n)");
-                reply = QueueProvider.take().toLowerCase();
-            }
-            if (reply.startsWith("y")) {
-                throw new DeathException("restart");
-            } else if (reply.startsWith("n")) {
-                throw new DeathException("close");
-            }
-        }  else if (npcOpponent.getHealth() == 0) {
-            int xp = npcOpponent.getXPGain();
-            this.player.setXP(this.player.getXP() + xp);
-            int oldLevel = this.player.getLevel();
-            int newLevel = (int) (0.075 * Math.sqrt(this.player.getXP()) + 1);
-            this.player.setLevel(newLevel);
-
-            // Iterates over the npc's items and if there are any, drops them. 
-            // There are two loops due to a ConcurrentModification Exception that occurs
-            // if you try to remove the item while looping through the npc's items.
-            List<ItemStack> itemStacks = npcOpponent.getStorage().getItemStack();
-            List<String> itemIds = new ArrayList<>();
-            for (ItemStack itemStack : itemStacks) {
-                String itemId = itemStack.getItem().getId();
-                itemIds.add(itemId);
-            }
-            for (String itemId : itemIds) {
-                Item item = GameBeans.getItemRepository().getItem(itemId);
-                npcOpponent.removeItemFromStorage(item);
-                this.player.getLocation().addItem(item);
-                QueueProvider.offer("Your opponent dropped a " + item.getName());
-            }
-
-            this.player.getLocation().removeNpc(npcOpponent);
-            this.player.setGold(this.player.getGold() + npcOpponent.getGold());
-            QueueProvider.offer("You killed a " + npcOpponent.getName() + "\nYou have gained " + xp + " XP and " + npcOpponent.getGold() + " gold");
-            if (oldLevel < newLevel) {
-                QueueProvider.offer("You've are now level " + newLevel + "!");
-            }
-            CharacterChange cc = new CharacterChange();
-            cc.trigger(this.player, "kill", npcOpponent.getName());
-        }
+    }
+    
+    public BattleMenu(NPC npcOpponent, Player player) throws DeathException {
+    	this((Entity)npcOpponent, player);
+        this.npcOpponent = npcOpponent;
+        this.getBattleChoice();
     }
 
     public BattleMenu(Monster monsterOpponent, Player player) throws DeathException {
-        this.random = new Random();
+    	this((Entity)monsterOpponent, player);
         this.monsterOpponent = monsterOpponent;
-        this.player = player;
-        this.menuItems.add(new MenuItem("Attack", "Attack " + monsterOpponent.getName() + "."));
-        this.menuItems.add(new MenuItem("Defend", "Defend against " + monsterOpponent.getName() + "'s attack."));
-        this.menuItems.add(new MenuItem("Escape", "Try and escape from " + monsterOpponent.getName()));
+        this.getBattleChoice();
+    }
+
+    public void buildBattleMenu() {
+        this.menuItems.add(new MenuItem("Attack", "Attack " + opponent.getName() + "."));
+        this.menuItems.add(new MenuItem("Defend", "Defend against " + opponent.getName() + "'s attack."));
+        this.menuItems.add(new MenuItem("Escape", "Try and escape from " + opponent.getName()));
         this.menuItems.add(new MenuItem("Equip", "Equip an item"));
         this.menuItems.add(new MenuItem("Unequip", "Unequip an item"));
         this.menuItems.add(new MenuItem("View", "View details about your character"));
-        this.armour = player.getArmour();
-        this.damage = player.getDamage();
-        while (monsterOpponent.getHealth() > 0 && player.getHealth() > 0 && (escapeSuccessfulAttempts <= 0)) {
+    }
+    
+    private void getBattleChoice() throws DeathException {
+    	while (opponent.getHealth() > 0 && player.getHealth() > 0 && (escapeSuccessfulAttempts <= 0)) {
             QueueProvider.offer("\nWhat is your choice?");
             MenuItem selectedItem = displayMenu(this.menuItems);
+            
             testSelected(selectedItem);
         }
         if (player.getHealth() == 0) {
-            QueueProvider.offer("You died... Start again? (y/n)");
-            String reply = QueueProvider.take().toLowerCase();
-            while (!reply.startsWith("y") && !reply.startsWith("n")) {
-                QueueProvider.offer("You died... Start again? (y/n)");
-                reply = QueueProvider.take().toLowerCase();
-            }
-            if (reply.startsWith("y")) {
-                throw new DeathException("restart");
-            } else if (reply.startsWith("n")) {
-                throw new DeathException("close");
-            }
-        }  else if (monsterOpponent.getHealth() == 0) {
-            int xp = monsterOpponent.getXPGain();
-            this.player.setXP(this.player.getXP() + xp);
-            int oldLevel = this.player.getLevel();
-            int newLevel = (int) (0.075 * Math.sqrt(this.player.getXP()) + 1);
-            this.player.setLevel(newLevel);
-
-            // Iterates over monster's items and if there are any, drops them. 
-            // There are two loops due to a ConcurrentModification Exception that occurs
-            // if you try to remove the item while looping through the monster's items.
-            List<ItemStack> itemStacks = monsterOpponent.getStorage().getItemStack();
-            List<String> itemIds = new ArrayList<>();
-            for (ItemStack itemStack : itemStacks) {
-                String itemId = itemStack.getItem().getId();
-                itemIds.add(itemId);
-            }
-            for (String itemId : itemIds) {
-                Item item = GameBeans.getItemRepository().getItem(itemId);
-                monsterOpponent.removeItemFromStorage(item);
-                this.player.getLocation().addItem(item);
-                QueueProvider.offer("Your opponent dropped a " + item.getName());
-            }
-
-            this.player.getLocation().removeMonster(monsterOpponent);
-            this.player.setGold(this.player.getGold() + monsterOpponent.getGold());
-            QueueProvider.offer("You killed a " + monsterOpponent.getName() + "\nYou have gained " + xp + " XP and " + monsterOpponent.getGold() + " gold");
-            if (oldLevel < newLevel) {
-                QueueProvider.offer("You've are now level " + newLevel + "!");
-            }
-            CharacterChange cc = new CharacterChange();
-            cc.trigger(this.player, "kill", monsterOpponent.getName());
+            playerDeath();
+        }  else if (opponent.getHealth() == 0) {
+            opponentDeath();
         }
     }
+    
+    //removed unnecessary conditional
+    //extracted from long method
+    private void attack() {
+    	mutateStats(0.5, 1);
+    	attack(player, opponent);
+    	attack(opponent, player);
+    	resetStats();
+    }
+    
+    private void defend() {
+    	mutateStats(0.5, 1);
+        QueueProvider.offer("\nYou get ready to defend against the " + opponent.getName() + ".");
+        attack(player, opponent);
+        attack(opponent, player);
+        resetStats();
+    }
+    
 
     private void testSelected(MenuItem m) {
         switch (m.getKey()) {
             case "attack": {
-                mutateStats(1, 0.5);
-                if (npcOpponent == null) {
-                    attack(player, monsterOpponent);
-                    attack(monsterOpponent, player);
-                } else {
-                    attack(player, npcOpponent);
-                    attack(npcOpponent, player);
-                }
-                resetStats();
+                attack();
                 break;
             }
             case "defend": {
-                mutateStats(0.5, 1);
-                if (npcOpponent == null) {
-                    QueueProvider.offer("\nYou get ready to defend against the " + monsterOpponent.getName() + ".");
-                    attack(player, monsterOpponent);
-                    attack(monsterOpponent, player);
-                } else {
-                    QueueProvider.offer("\nYou get ready to defend against the " + npcOpponent.getName() + ".");
-                    attack(player, npcOpponent);
-                    attack(npcOpponent, player);
-                }
-                resetStats();
+                defend();
                 break;
             }
             case "escape": {
-                if (npcOpponent == null) {
-                    escapeSuccessfulAttempts = escapeAttempt(player, monsterOpponent, escapeSuccessfulAttempts);
-                } else {
-                    escapeSuccessfulAttempts = escapeAttempt(player, npcOpponent, escapeSuccessfulAttempts);
-                }
+                escapeSuccessfulAttempts = escapeAttempt(player, opponent, escapeSuccessfulAttempts);
                 break;
             }
             case "equip": {
@@ -207,9 +122,9 @@ public class BattleMenu extends Menus {
 
     private int escapeAttempt(Player player, Entity attacker, int escapeAttempts) {
         if (escapeAttempts == -10)
-	{
-	     escapeAttempts = 0;
-	}
+        {
+        	escapeAttempts = 0;
+        }
         double playerEscapeLevel = player.getIntelligence() + player.getStealth() + player.getDexterity();
         double attackerEscapeLevel = attacker.getIntelligence() + attacker.getStealth() + attacker.getDexterity() + 
             (attacker.getDamage() / playerEscapeLevel);
@@ -310,6 +225,68 @@ public class BattleMenu extends Menus {
             default:
                 viewStats();
                 break;
+        }
+    }
+    
+    public void playerDeath() throws DeathException {
+    	QueueProvider.offer("You died... Start again? (y/n)");
+        String reply = QueueProvider.take().toLowerCase();
+        while (!reply.startsWith("y") && !reply.startsWith("n")) {
+            QueueProvider.offer("You died... Start again? (y/n)");
+            reply = QueueProvider.take().toLowerCase();
+        }
+        if (reply.startsWith("y")) {
+            throw new DeathException("restart");
+        } else if (reply.startsWith("n")) {
+            throw new DeathException("close");
+        }
+    }
+    
+    public void opponentDeath() {
+    	int xp;
+    	if (npcOpponent == null) {
+    		xp = ((Monster)opponent).getXPGain();
+    	} else {
+    		xp = ((NPC)opponent).getXPGain();
+    	}
+    	
+        this.player.setXP(this.player.getXP() + xp);
+        int oldLevel = this.player.getLevel();
+        int newLevel = (int) (0.075 * Math.sqrt(this.player.getXP()) + 1);
+        this.player.setLevel(newLevel);
+        
+        opponentLoot();
+
+        if (npcOpponent == null) {
+        	this.player.getLocation().removeMonster((Monster)opponent);
+    	} else {
+    		this.player.getLocation().removeNpc((NPC)opponent);
+    	}
+        
+        this.player.setGold(this.player.getGold() + opponent.getGold());
+        QueueProvider.offer("You killed a " + opponent.getName() + "\nYou have gained " + xp + " XP and " + opponent.getGold() + " gold");
+        if (oldLevel < newLevel) {
+            QueueProvider.offer("You've are now level " + newLevel + "!");
+        }
+        CharacterChange cc = new CharacterChange();
+        cc.trigger(this.player, "kill", opponent.getName());
+    }
+    
+    public void opponentLoot() {
+    	// Iterates over the npc's items and if there are any, drops them. 
+        // There are two loops due to a ConcurrentModification Exception that occurs
+        // if you try to remove the item while looping through the npc's items.
+        List<ItemStack> itemStacks = opponent.getStorage().getItemStack();
+        List<String> itemIds = new ArrayList<>();
+        for (ItemStack itemStack : itemStacks) {
+            String itemId = itemStack.getItem().getId();
+            itemIds.add(itemId);
+        }
+        for (String itemId : itemIds) {
+            Item item = GameBeans.getItemRepository().getItem(itemId);
+            opponent.removeItemFromStorage(item);
+            this.player.getLocation().addItem(item);
+            QueueProvider.offer("Your opponent dropped a " + item.getName());
         }
     }
 }
