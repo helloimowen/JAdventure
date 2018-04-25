@@ -70,8 +70,6 @@ public class BattleMenu extends Menus {
         }
     }
     
-    //removed unnecessary conditional
-    //extracted from long method
     private void attack() {
     	mutateStats(0.5, 1);
     	attack(player, opponent);
